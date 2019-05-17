@@ -12,7 +12,6 @@ import local_storage
 import asyncs
 from kademlia.network import Server
 from Menu.Menu import Menu
-import Menu.Menu as menu
 from Menu.Item import Item
 
 DEBUG = False
@@ -197,76 +196,36 @@ def get_ip_address():
     return ip
 
 
-
-def start_node(port, BTIp="", BTPort=0):
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s\
-                                  - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-
-    # DEBUG
-    if DEBUG:
-        log = logging.getLogger('kademlia')
-        log.addHandler(handler)
-        log.setLevel(logging.DEBUG)
-
-    loop = asyncio.get_event_loop()
-    if DEBUG:
-        loop.set_debug(True)
-
-    server = Server()
-    loop.run_until_complete(server.listen(port))
-
-    # the first peer don't do that
-    if BTPort != 0:
-        bootstrap_node = (BTIp, int(BTPort))
-        loop.run_until_complete(server.bootstrap([bootstrap_node]))
-
-    return (server, loop)
-
-
-
-def _exec_p2p(connection,server):
+# put the peer in "Listen mode" for new connections
+def start_p2p_listenner(connection):
     connection.bind()
     connection.listen(timeline, server, nickname, vector_clock)
 
-def start_p2p(nickname, port, server, loop):
-    global p2p_port
-    p2p_port = port
-    connection = peer(port)
-    (timeline, following, vector_clock) = local_storage.read_data(db_file+nickname)
-    thread = Thread(target=_exec_p2p, args=(connection, server,))
-    thread.start()
-    return connection
 
-def _start(args):
-    global nickname
-    if len(args) == 6:
-        (server,loop) = start_node(int(args[1]), args[3], int(args[4]))
-        nickname = args[5]
-    elif len(args) == 4:
-        (server,loop) = start_node(int(args[1]))
-        nickname = args[3]
-    else:
-        print("Usage: python hisser.py <port_dht> <port_p2p>\
-              [<bootstrap ip> <bootstrap port>] nickname")
-        sys.exit(1)
-    return (server,loop)
-
+""" MAIN """
 if __name__ == "__main__":
-    (server,loop) = _start(sys.argv)
-    try :
+    check_argv()
+    p2p_port = sys.argv[2]
+    ip_address = get_ip_address()                                                           # Get ip address from user
+    print(ip_address)
+    (server, loop) = start()
+    try:
+        print('Peer is running...')
+        nickname = get_nickname()                                                           # Get nickname from user
+
         (timeline, following, vector_clock) = local_storage.read_data(db_file+nickname)     # TODO rm nickname (it's necessary for to allow tests in the same host
-        connection = start_p2p(nickname,int(sys.argv[2]),server, loop)
-        ip_address = connection.host
-        loop.add_reader(sys.stdin, handle_stdin)
-        asyncio.ensure_future(build_user_info())
+
+        connection = peer(int(p2p_port))
+        thread = Thread(target = start_p2p_listenner, args = (connection, ))
+        thread.start()
+
+        loop.add_reader(sys.stdin, handle_stdin)                                            # Register handler to read STDIN
+        asyncio.ensure_future(build_user_info())                                                    # Register in DHT user info
         asyncio.ensure_future(get_timeline())
 
         m = build_menu()
-        asyncio.ensure_future(asyncs.task(server, loop, nickname, m, queue))
-        loop.run_forever()
-
+        asyncio.ensure_future(asyncs.task(server, loop, nickname, m, queue))                   # Register handler to consume the queue
+        loop.run_forever()                                                                  # Keeps the user online
     except Exception as e:
         print(e)
     finally:

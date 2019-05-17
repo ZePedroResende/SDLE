@@ -1,1 +1,1 @@
-"{\"messages\": [], \"following\": [], \"vector_clock\": {}}"
+"{\"messages\": [{\"id\": \"resende\", \"message\": \"asdasda\"}, {\"id\": \"resende\", \"message\": \"sadad\"}, {\"id\": \"neo\", \"message\": \"asdasd\"}], \"following\": [{\"id\": \"resende\", \"ip\": \"10.0.2.37\", \"port\": \"\"}, {\"id\": \"resende\", \"ip\": \"10.0.2.37\", \"port\": 9005}, {\"id\": \"neo\", \"ip\": \"10.0.2.37\", \"port\": 9003}], \"vector_clock\": {\"lol\": 0, \"resende\": 2, \"neo\": 1}}"

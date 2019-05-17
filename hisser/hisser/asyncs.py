@@ -55,7 +55,6 @@ async def get_followers_p2p(server, nickname, vector_clock):
 
 async def task_send_msg(msg, server, nickname, vector_clock):
     connection_info = await get_followers_p2p(server, nickname, vector_clock)
-    # print('CONNECTION INFO (Ip, Port)')
     for follower in connection_info:
         #print(follower)
         info = follower.split()
@@ -64,7 +63,7 @@ async def task_send_msg(msg, server, nickname, vector_clock):
 
 def send_p2p_msg(ip, port, message, timeline=None):
     if isOnline(ip, port):
-        connection = peer(ip, port)
+        connection = peer( port)
         connection.connect()
         connection.send(message, timeline)
 
