@@ -6,6 +6,9 @@ import socket
 import random
 import builder
 import json
+import datetime
+from threading import Timer
+from Msg import Msg
 from peer import peer
 from threading import Thread
 import local_storage
@@ -69,11 +72,16 @@ def show_timeline():
     return False
 
 
+def exitfunc(msg):
+    timeline.remove(msg)
+    
 # send message to the followers
 def send_msg():
     msg = input('Insert message: ')
     msg = msg.replace('\n','')
-    timeline.append({'id': nickname, 'message': msg})
+    json = {'id': nickname, 'message': msg, 'datetime': datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}
+    timeline.append(json)
+    Timer(10, exitfunc, [json]).start()
     print(msg)
     result = builder.simple_msg(msg, nickname)
     asyncio.ensure_future(asyncs.task_send_msg(result, server, nickname, vector_clock))
@@ -256,7 +264,22 @@ def _start(args):
 if __name__ == "__main__":
     (server,loop) = _start(sys.argv)
     try :
-        (timeline, following, vector_clock) = local_storage.read_data(db_file+nickname)     # TODO rm nickname (it's necessary for to allow tests in the same host
+        (timeline, following, vector_clock) = local_storage.read_data(db_file+nickname)     # TODO rm nickname (it's necessary for to allow tests in the same host 
+        msg_to_remove = []
+
+        if timeline:
+            for m in timeline:
+                d = datetime.datetime.strptime(m['datetime'], '%m/%d/%Y, %H:%M:%S')
+                sec = (datetime.datetime.now() - d).total_seconds()
+                if sec < 10:
+                    Timer(int(10 - sec), exitfunc, [m]).start()
+                else:
+                    msg_to_remove.append(m)
+        
+        if msg_to_remove:
+            for m in msg_to_remove:
+                timeline.remove(m)
+        
         connection = start_p2p(nickname,int(sys.argv[2]),server, loop)
         ip_address = connection.host
         loop.add_reader(sys.stdin, handle_stdin)

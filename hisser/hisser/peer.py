@@ -1,6 +1,8 @@
 import socket
 import threading
 import json
+import datetime
+from threading import Timer
 from requests import get
 
 
@@ -75,11 +77,15 @@ def process_request(conn, client_add, timeline, server, nick, vector_clock):
     finally:
         conn.close()
 
+def exitfunc(timeline, msg):
+    timeline.remove(msg)
 
 def process_message(data, timeline, server, nickname, vector_clock):
     info = json.loads(data)
     if info['type'] == 'simple':
-        timeline.append({'id': info['id'], 'message': info['msg']})
+        js = {'id': info['id'], 'message': info['msg'], 'datetime': datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}
+        timeline.append(js)
+        Timer(10, exitfunc, [timeline, js]).start()
         update_vector_clock(server, 1, info['id'], vector_clock)
         return 'ACK'.encode('utf-8')
     elif info['type'] == 'timeline':
