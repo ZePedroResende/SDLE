@@ -1,5 +1,6 @@
 import argparse
 import json
+import pickle
 
 
 # Convert data to JSON
@@ -20,8 +21,8 @@ def __JsonToData(string):
 # Import data from file
 def __importData(filename):
     try:
-        with open(filename + '.json') as data_file:
-            data = json.load(data_file)
+        with open(filename + '.p', "rb") as data_file:
+            data = pickle.load( data_file )
             data_file.close()
             return data
     except Exception:
@@ -30,8 +31,8 @@ def __importData(filename):
 
 # Export data to file
 def __exportData(data, filename):
-    with open(filename + '.json', 'w') as outfile:
-        json.dump(data, outfile, sort_keys=True, indent=4)
+    with open(filename + '.p', 'wb') as outfile:
+        pickle.dump( data, outfile )
     outfile.close()
 
 
