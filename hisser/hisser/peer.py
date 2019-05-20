@@ -45,7 +45,7 @@ class peer:
         self.socket.close()
 
     # send a message to the other peer
-    def send(self, msg, timeline=None):
+    def send(self, msg, timeline=None, vector=None):
         try:
             self.socket.sendall(msg.encode('utf-8'))
 
@@ -54,7 +54,7 @@ class peer:
             if not data.decode('utf-8') == 'ACK':
                 info = json.loads(data)
                 if info['type'] == 'timeline':
-                    record_messages(data, timeline)
+                    record_messages(data, timeline, vector)
         finally:
             print('closing socket')
             self.socket.close()
@@ -84,8 +84,13 @@ def process_message(data, timeline, server, nickname, vector_clock):
         return 'ACK'.encode('utf-8')
     elif info['type'] == 'timeline':
         list = get_messages(info['id'], timeline, int(info['n']))
-        di = {'type': 'timeline', 'list': json.dumps(list)}
+        di = {'type': 'timeline', 'list': json.dumps(list), 'max': vector_clock[info['id']]}
+        print("process")
+        print(info['id'])
+        print(vector_clock)
         update_vector_clock(server, len(list), info['id'], vector_clock)
+        print(vector_clock)
+        print("process")
         res = json.dumps(di)
         return res.encode('utf-8')
 
@@ -107,8 +112,10 @@ def get_messages(id, timeline, n):
     return list[-n:]
 
 
-def record_messages(data, timeline):
+def record_messages(data, timeline, vector):
     info = json.loads(data)
     list = json.loads(info['list'])
+    vector[list[0]['id']] = int(info['max'])
     for m in list:
+        print(m)
         timeline.append({'id': m['id'], 'message': m['message']})

@@ -146,6 +146,7 @@ async def get_random_updated_follower(user, userInfo, ownInfo):
     user_followers = userInfo['followers']
     while(user_followers):
         random_follower = random.choice(list(user_followers.keys()))
+        print(random_follower)
         random_follower_con = userInfo['followers'][random_follower]
         info = random_follower_con.split()
         print(userInfo['vector_clock'])

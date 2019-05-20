@@ -54,6 +54,7 @@ def follow_user():
     user = input('User Nickname: ')
     user_id = user.replace('\n', '')
     asyncio.ensure_future(asyncs.task_follow(user_id, nickname, server, following, ip_address, p2p_port, vector_clock))
+    asyncio.ensure_future(get_timeline())
     return False
 
 
@@ -128,6 +129,7 @@ def check_argv():
 
 # get timeline to the followings TODO
 async def get_timeline():
+    print(vector_clock)
     for user in following:
         result = await server.get(user['id'])
         result2 = await server.get(nickname)
@@ -143,10 +145,16 @@ async def get_timeline():
 # temos de implementar o XOR
 async def get_random_updated_follower(user, userInfo, ownInfo):
     print("RANDOM FOLLOWER")
+    print(userInfo)
     id = user['id']
     user_followers = userInfo['followers']
+    print(user)
+    if id != nickname and asyncs.isOnline(user['ip'],user['port']):
+        return [user['ip'],user['port']], int(userInfo['vector_clock'][id]) - vector_clock[id]
+
     while(user_followers):
         random_follower = random.choice(list(user_followers.keys()))
+        print(random_follower)
         random_follower_con = userInfo['followers'][random_follower]
         info = random_follower_con.split()
         print(userInfo['vector_clock'])
@@ -165,7 +173,10 @@ async def get_random_updated_follower(user, userInfo, ownInfo):
 # send a message to a node asking for a specific timeline
 def ask_for_timeline(userIp, userPort, TLUser, n):
     msg = builder.timeline_msg(TLUser, vector_clock, n)
-    asyncs.send_p2p_msg(userIp, int(userPort), msg, timeline)
+    print("asdas")
+    print(msg)
+    print("asdas")
+    asyncs.send_p2p_msg(userIp, int(userPort), msg, timeline, vector_clock)
     print('ASKING FOR TIMELINE')
 
 
